@@ -11,9 +11,11 @@ from pychemia.utils.periodic import covalent_radius, atomic_number
 from pychemia.utils.serializer import generic_serializer
 from pychemia.code.lennardjones import LennardJones
 from pychemia.external.symmol import get_point_group
+from pychemia.external.pymatgen import pychemia2pymatgen
 from ._population import Population
 from ._distances import FingerPrints, StructureDistances
 
+from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 
 class LJCluster(Population):
 
@@ -33,15 +35,17 @@ class LJCluster(Population):
         self.fingerprinter = FingerPrints(self.pcdb)
         self.distancer = StructureDistances(self.pcdb)
 
-    def add_random(self):
+    def add_random(self,with_symmetry=True):
         """
-        Add one random structure to the population
+        Add one rndom structure to the population
         """
         if self.composition is None:
             raise ValueError('No composition associated to this population')
         comp = self.composition.composition.copy()
-        structure = Structure.random_cluster(composition=comp)
-
+        if with_symmetry:
+           structure = Structure.random_symetric_cluster(composition=comp)
+        else:
+           structure = Structure.random_cluster(composition=comp)
         return self.new_entry(structure), None
 
     def get_duplicates(self, ids, tolerance=None, fast=True):
@@ -289,7 +293,10 @@ class LJCluster(Population):
             structure.align_inertia_momenta()
         sorted_indices = structure.sort_sites()
         forces = forces[sorted_indices]
-        pg = get_point_group(structure, executable='symmol')
+        #pg = get_point_group(structure, executable='symmol')
+        molecule=pychemia2pymatgen(structure)
+        pga=PointGroupAnalyzer(molecule)
+        pg=str(pga.get_pointgroup())
         properties = {'forces': generic_serializer(forces), 'energy': energy, 'point_group': pg}
         return structure, properties
 
@@ -366,7 +373,12 @@ class LJCluster(Population):
         structure = self.get_structure(entry_id)
         entry = self.get_entry(entry_id, projection={'properties': 1})
         msg = 'Cluster: LJ%d  Point group: %s  Energy: %7.3f Forces: %7.1E'
-        pg = entry['properties']['point_group']
+        try:
+           pg = entry['properties']['point_group']
+        except KeyError:
+           molecule=pychemia2pymatgen(structure)
+           pga=PointGroupAnalyzer(molecule)
+           pg=str(pga.get_pointgroup())
         return msg % (structure.natom, pg, entry['properties']['energy'], self.maxforce(entry_id))
 
     def new_entry(self, structure, active=True):

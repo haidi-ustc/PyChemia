@@ -42,6 +42,7 @@ class FireFly(Searcher):
         self.beta0 = 0.9
         self.alpha0 = 0.3
         self.delta = 0.9
+        self.random_ratio = 0.3
         self.multi_move = True
         if params is None:
             params = {}
@@ -61,12 +62,19 @@ class FireFly(Searcher):
                 'beta0': self.beta0,
                 'alpha0': self.alpha0,
                 'delta': self.delta,
-                'multi_move': self.multi_move}
+                'multi_move': self.multi_move,
+                'random_ratio':self.random_ratio}
 
     def run_one(self):
         # Get a static selection of the values in the generation that are relaxed
         selection = self.population.ids_sorted(self.actives_in_generation)
+
+        number_random= int(len(selection)*self.random_ratio)
+        print("%d of %d structures will be replaced by random"%(number_random,len(selection)))
         pcm_log.info(' Size of selection : %d' % len(selection))
+
+        tail_selection=selection[len(selection)-number_random:]
+        selection=selection[0:len(selection)-number_random]
 
         # For statistical purposes
         distances = []
@@ -159,3 +167,6 @@ class FireFly(Searcher):
                 self.population.enable(new_selection[entry_id])
             else:
                 self.pass_to_new_generation(entry_id, reason='The best')
+            
+        for entry_id in tail_selection:
+            self.replace_by_random(entry_id, reason='random')

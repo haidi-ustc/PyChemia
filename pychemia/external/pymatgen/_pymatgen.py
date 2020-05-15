@@ -11,6 +11,7 @@ except ImportError:
 
 from pychemia import Structure
 from pymatgen import Structure as PMG_Structure
+from pymatgen import Molecule
 
 
 def cif2structure(filename, primitive=False):
@@ -69,7 +70,10 @@ def pychemia2pymatgen(structure):
     :param structure: (pychemia.Structure) Structure to convert into pymatgen Structure object
     :return:
     """
-    lattice = structure.cell
-    coords = structure.reduced
     species = structure.symbols
-    return PMG_Structure(lattice, species, coords)
+    if structure.is_crystal:
+       lattice = structure.cell
+       coords = structure.reduced
+       return PMG_Structure(lattice, species, coords)
+    else:
+       return Molecule(species,structure.positions)

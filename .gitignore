@@ -65,3 +65,4 @@ symmol.out
 pychemia/**/*.html
 pychemia/**/*.c
 pychemia/version.py
+mytest

@@ -7,6 +7,7 @@ except ImportError:
     pass
 
 import json
+import time
 import os
 import struct
 import sys
@@ -22,6 +23,13 @@ from pychemia.core.delaunay import get_reduced_bases
 from pychemia.utils.computing import deep_unicode
 from pychemia.utils.periodic import mass, atomic_number, covalent_radius, valence, atomic_symbols
 import scipy.spatial
+
+import random
+from pyxtal.crystal import random_crystal, random_crystal_1D, random_crystal_2D, random_cluster
+from pyxtal.symmetry import get_symbol_and_number
+from pymatgen import Molecule as PMolecule
+from pymatgen import Structure as PStructure
+from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 
 
 class Structure(MutableSequence):
@@ -630,6 +638,38 @@ class Structure(MutableSequence):
         st = Structure.random_cell(composition=composition, method=method, stabilization_number=stabilization_number,
                                    nparal=nparal, periodic=False)
         return Structure(symbols=st.symbols, positions=st.positions, periodicity=False)
+
+    @staticmethod
+    def random_symetric_cluster(composition,stabilization_number=100,factor=1.0):
+        comp = Composition(composition)
+        pcm_log.debug('Generating a random structure with composition: ' + str(comp.composition))
+        natom = comp.natom
+        symbols = comp.symbols
+        system=set(symbols)
+        #space group
+        ic=0
+        dimension=0
+        numIons=[]
+        for elem in system:
+            numIons.append(comp[elem])
+        while ic<stabilization_number:
+           random.seed(time.time()*1e7)
+           sg = random.choice(range(1,57))
+           if ic==99:
+               sg=1
+           symbol, sg = get_symbol_and_number(sg, dimension)
+           try:
+               cluster = random_cluster(sg, system, np.array(numIons), factor)
+               if cluster.valid:
+                  break
+           except:
+               pass
+           ic+=1
+        ans = PointGroupAnalyzer(cluster.molecule).sch_symbol
+        print('Symmetry requested: {:d}({:s}), generated: {:s}'.format(sg, symbol, ans))
+        symbols=[i.symbol for i in  cluster.molecule.species]
+        positions=cluster.molecule.cart_coords
+        return Structure(symbols=symbols, positions=positions, periodicity=False)
 
     def adjust_reduced(self):
         for i in range(self.natom):
@@ -1279,10 +1319,9 @@ def random_structure(method, composition, periodic=True, max_volume=1E10):
 
         assert (method in ['scaling', 'stretching'])
 
-	
         while True:
-            trial=0
-    
+
+            trial = 0    
             if method == 'scaling':
                 lattice = Lattice.random_cell(comp)
                 # Random reduced positions
@@ -1316,8 +1355,7 @@ def random_structure(method, composition, periodic=True, max_volume=1E10):
                     print("Trial failed, distance %f is less than covalent radious %f" % (distance, covalent_dim))
                     trial += 1
 
-            if trial > 100:
-                print("Leaving after 100 attemps")
+            if trial > 10:
                 break
 
         # else:

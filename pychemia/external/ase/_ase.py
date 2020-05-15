@@ -57,11 +57,14 @@ def ase2pychemia(aseatoms):
     Converts an ase atoms object into a pychemia
     structure object
     """
-    cell = aseatoms.get_cell()
     an = aseatoms.get_atomic_numbers()
     symbols = pychemia.utils.periodic.atomic_symbol(an)
     positions = aseatoms.get_positions()
-    return pychemia.Structure(cell=cell, positions=positions, symbols=symbols)
+    if sum(aseatoms.get_pbc())>0:
+       cell = aseatoms.get_cell()
+       return pychemia.Structure(cell=cell, positions=positions, symbols=symbols)
+    else:
+       return pychemia.Structure(positions=positions, symbols=symbols)
 
 
 def pychemia2ase(structure):
@@ -71,7 +74,10 @@ def pychemia2ase(structure):
     :param structure: (pychemia.Structure) PyChemia Structure to convert into a ASE Atoms object
     :return:
     """
-    cell = structure.cell
-    scaled_positions = structure.reduced
     symbols = structure.symbols
-    return ase.atoms.Atoms(cell=cell, scaled_positions=scaled_positions, symbols=symbols)
+    if structure.is_crystal:
+       cell = structure.cell
+       scaled_positions = structure.reduced
+       return ase.atoms.Atoms(cell=cell, scaled_positions=scaled_positions, symbols=symbols)
+    else:
+       return ase.atoms.Atoms(positions=structure.positions,symbols=symbols)

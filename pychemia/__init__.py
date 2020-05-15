@@ -5,7 +5,7 @@ It has connectors to manipulate the input for several DFT codes and interpret th
 PyChemia allows the store of structures and properties in a Mongo database, search for new structures of a given
 composition, and perform a structural search using several metaheuristic global search algorithms included on PyChemia.
 """
-
+import os
 import sys
 import logging
 import importlib
@@ -90,7 +90,13 @@ spec = importlib.util.find_spec("pymatgen")
 HAS_PYMATGEN = spec is not None
 
 pcm_log = logging.getLogger(__name__)
-pcm_log.addHandler(logging.NullHandler())
+pcm_log.setLevel(logging.INFO)
+pcm_logf = logging.FileHandler(os.getcwd()+os.sep+'pcm.log')
+pcm_logf_formatter=logging.Formatter('%(asctime)s - %(levelname)s : %(message)s')
+#pcm_logf_formatter=logging.Formatter('%(asctime)s - %(name)s - [%(filename)s:%(funcName)s - %(lineno)d ] - %(levelname)s \n %(message)s')
+pcm_logf.setFormatter(pcm_logf_formatter)
+pcm_log.addHandler(pcm_logf)
+
 
 from .core import Structure, Composition, Element
 from . import analysis
