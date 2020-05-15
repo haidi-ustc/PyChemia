@@ -1,23 +1,17 @@
 import os
 import time
-from multiprocessing import Pool, Process
 import pychemia
 from pychemia.utils.serializer import generic_serializer
 from pychemia.external.ase import pychemia2ase,ase2pychemia
-from pychemia.external.pymatgen import pychemia2pymatgen
 from ase.optimize import BFGS,QuasiNewton
-from ase.io import read
-from deepmd.calculator import DP
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 
 __author__ = 'Haidi Wang'
 
-cal=DP(model="frozen_model_cu.pb",type_dict={'Cu':0})
-aaa=AseAtomsAdaptor()
-print(cal)
 
-def cluster_ase_worker(db_settings):
+def cluster_ase_worker(db_settings,calculator):
+    aaa=AseAtomsAdaptor()
 
     while True:
         pcdb = pychemia.db.get_database(db_settings)
@@ -44,7 +38,7 @@ def cluster_ase_worker(db_settings):
                energy=atoms.get_potential_energy()[0]
             else:
                print("unconverge")
-               energy='622427' 
+               energy=622427 
             forces=generic_serializer(atoms.get_forces())
             atoms.set_pbc(False)
             molecule=aaa.get_molecule(atoms)
@@ -57,35 +51,6 @@ def cluster_ase_worker(db_settings):
             population.pcdb.unlock(entry['_id'])
         else:
             break
-
-
-def cluster_ase_evaluator(db_settings, nparal):
-    pcdb = pychemia.db.get_database(db_settings)
-    population = pychemia.population.LJCluster(pcdb)
-    print('Staring evaluator for ', population.name)
-    while True:
-        entry = population.pcdb.db.pychemia_entries.find_one({'status.' + population.tag: True,
-                                                              'status.lock': {'$exists': False},
-                                                              'properties': {}}, {'_id': 1})
-
-        if entry is None:
-            time.sleep(2)
-            create_pool = False
-        else:
-            create_pool = True
-
-        print("create_pool %s"%create_pool)
-        if create_pool:
-            pool = Pool(processes=nparal)
-            pool.map(cluster_ase_worker, nparal * [db_settings])
-            pool.close()
-            pool.join()
-
-
-def cluster_ase_launcher(db_settings, nparal):
-    p = Process(target=cluster_ase_evaluator, args=(db_settings, nparal))
-    p.start()
-    return p
 
 def main(db_settings):
     pcdb = pychemia.db.get_database(db_settings)
@@ -107,4 +72,6 @@ def main(db_settings):
 
 if __name__=='__main__':
    from monty.serialization import dumpfn,loadfn
-   main(loadfn('db_settings.json'))
+   from deepmd.calculator import DP
+   cal=DP(model="frozen_model_cu.pb",type_dict={'Cu':0})
+   main(loadfn('db_settings.json'),calculator=cal)

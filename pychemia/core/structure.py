@@ -11,6 +11,7 @@ import time
 import os
 import struct
 import sys
+import random
 import numpy as np
 from collections.abc import MutableSequence
 from itertools import combinations, repeat
@@ -24,11 +25,8 @@ from pychemia.utils.computing import deep_unicode
 from pychemia.utils.periodic import mass, atomic_number, covalent_radius, valence, atomic_symbols
 import scipy.spatial
 
-import random
 from pyxtal.crystal import random_crystal, random_crystal_1D, random_crystal_2D, random_cluster
 from pyxtal.symmetry import get_symbol_and_number
-from pymatgen import Molecule as PMolecule
-from pymatgen import Structure as PStructure
 from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 
 
