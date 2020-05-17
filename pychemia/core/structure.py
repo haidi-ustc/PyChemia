@@ -1134,12 +1134,12 @@ class Structure(MutableSequence):
             mofi += mass(isite.symbols[0]) * (sum(np.array(isite.position) ** 2) - isite.position[axis] ** 2)
         return mofi
 
-    def product_of_inertia(self, axis):
+    def product_of_inertia(self, axis, eps=1e-6):
 
         assert self.is_perfect
         pofi = 0
         for isite in self:
-            pofi += mass(isite.symbols[0]) * (np.prod(isite.position) / isite.position[axis])
+            pofi += mass(isite.symbols[0]) * (np.prod(isite.position) / (isite.position[axis]+eps))
         return pofi
 
     def inertia_matrix(self):
