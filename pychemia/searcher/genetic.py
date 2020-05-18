@@ -18,24 +18,25 @@ class GeneticAlgorithm(Searcher):
         self.nelite = None
         self.mutation_prob = None
         self.cross_prob = None
+        self.elite_prob = None
         self.crossing_sets = None
         self.set_params(params)
 
     def set_params(self, params):
-        self.nelite = 2
         self.mutation_prob = 0.5
-        self.cross_prob = 0.5
-        if self.generation_size == 32:
-            self.crossing_sets = [10, 5]
-        elif self.generation_size == 16:
-            self.crossing_sets = [5, 2]
-        elif self.generation_size == 8:
-            self.crossing_sets = [2, 1]
+        self.cross_prob = 0.4
+        self.elite_prob = 0.1
+        self.nelite = int(self.elite_prob*self.generation_size)
+
+        _ncross_1=int((self.generation_size-self.nelite)/3)
+        _ncross_2=self.generation_size-self.nelite-_ncross_1
+        self.crossing_sets = [_ncross_2,_ncross_1]
+        
 
         if params is None:
             params = {}
-        if 'nelite' in params:
-            self.nelite = params['nelite']
+        if 'elite_prob' in params:
+            self.nelite = params['elite_prob']
         if 'mutation_prob' in params:
             self.mutation_prob = params['mutation_prob']
         if 'cross_prob' in params:
@@ -43,7 +44,7 @@ class GeneticAlgorithm(Searcher):
         if 'crossing_sets' in params:
             self.crossing_sets = params['crossing_sets']
 
-        self.nelite = int(self.generation_size - 2 * sum(self.crossing_sets))
+        #self.nelite = int(self.generation_size - 2 * sum(self.crossing_sets))
         if self.nelite <= 0:
             raise ValueError('Enter explicit crossing_sets for your generation size')
 
