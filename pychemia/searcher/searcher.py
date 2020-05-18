@@ -499,7 +499,7 @@ class Searcher:
                 data['_id'] = self.searcher_id
                 self.pcdb.db.searcher_info.insert_one(data)
             else:
-                self.pcdb.db.searcher_info.update_one({'_id': self.searcher_id}, self.to_dict)
+                self.pcdb.db.searcher_info.update_one({'_id': self.searcher_id}, {"$set":self.to_dict})
 
     def clean(self):
         if self.pcdb is not None:
